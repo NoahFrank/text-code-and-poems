@@ -39,7 +39,9 @@ class Poem {
                 console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
                 words[words.length - 1] = word;
                 lines[i] = _.join(words, ' ');
+                console.log("Adding", word, " to words done:", this.wordsDone);
                 this.wordsDone.push(word); // Add word to done so we can parallel done and no duplicates
+                console.log("Comparing lengths of", this.wordsDone.length, ":", lines.length);
                 if (this.wordsDone.length == lines.length) {
                     cb(_.join(lines, '\n'));
                 }
@@ -48,6 +50,7 @@ class Poem {
     }
 
     getRhymeFor(word, cb) {
+        console.log("Started get RhymeFor:", word);
         let wordSyl = syllable(word);
         datamuse.words({
             rel_rhy: word
@@ -60,6 +63,7 @@ class Poem {
                 cb(rhymes[randIndex].word);
             } else {
                 // TODO: failed to get rhyme for given word (over SIMILAR_SCORE_CONSTANT)
+                console.log("Failed?");
             }
         }).catch(error => {
             console.log(error.response.body);
@@ -78,16 +82,21 @@ class Poem {
                 return word.score >= SIMILAR_SCORE_CONSTANT;
             }
         });
+        console.log("\nFiltered", rhymes);
         // TODO: Handle if no words fit criteria, or if a couple meet and they are duplicates
         // Don't want to pick the same word we have already gotten
+        console.log("Removing", this.wordsDone);
         _.forEach(this.wordsDone, (removeWord) => {
-            rhymes = _.remove(rhymes, (rhymeWord) => removeWord === rhymeWord);
+            rhymes = _.filter(rhymes, (rhymeWord) => removeWord != rhymeWord.word);
         });
+        console.log("\nRemoved", rhymes);
         // Logic for no rhymes, try without same syllable, then fail
         if (rhymes.length == 0) {
             if (syllable) {
+                console.log("Redoing with no syl");
                 filterRhymes(rawRhymes, wordSyl, false);
             } else {
+                console.log("failed to filter rhymes");
                 return false;
             }
         }
