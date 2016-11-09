@@ -13,9 +13,13 @@ router.get('/', function(req, res, next) {
     let test = new Poem(`They put me in the oven to bake.
 Me a deprived and miserable cake.
 Feeling the heat I started to bubble.
-Watching the others I knew I was in trouble...`,
-        (result) => {
-            console.log(result);
+Watching the others I knew I was in orange...`,
+        (error, result) => {
+            if (error) {
+                console.log("ERROR:", error);
+            } else {
+                console.log(result);
+            }
     });
     res.render('index', { title: 'Express' });
 });
@@ -34,42 +38,41 @@ class Poem {
             let line = lines[i];
             let words = _.split(line, ' ');
             let lastWord = words[words.length - 1].replace(/[^\w]/g,''); // Want to rhyme last word
-            this.getRhymeFor(lastWord, (word) => {
-                // Now rejoin line and replace for final text
-                console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
-                words[words.length - 1] = word;
-                lines[i] = _.join(words, ' ');
-                console.log("Adding", word, " to words done:", this.wordsDone);
-                this.wordsDone.push(word); // Add word to done so we can parallel done and no duplicates
-                console.log("Comparing lengths of", this.wordsDone.length, ":", lines.length);
-                if (this.wordsDone.length == lines.length) {
-                    cb(_.join(lines, '\n'));
+            this.getRhymeFor(lastWord, (error, word) => {
+                if (error) { // An error occurred when getting a rhyme
+                    cb(error);
+                } else {
+                    // Now rejoin line and replace for final text
+                    console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
+                    words[words.length - 1] = word;
+                    lines[i] = _.join(words, ' ');
+                    this.wordsDone.push(word); // Add word to done so we can parallel done and no duplicates
+                    if (this.wordsDone.length == lines.length) {
+                        cb(false, _.join(lines, '\n'));
+                    }
                 }
             });
         }
     }
 
     getRhymeFor(word, cb) {
-        console.log("Started get RhymeFor:", word);
         let wordSyl = syllable(word);
         datamuse.words({
             rel_rhy: word
         }).then((json) => {
             let rhymes = this.filterRhymes(json, wordSyl);
             // Determine if we actually found a rhyme
-            console.log("Rhymes for", word, " are", rhymes);
             if (rhymes) {
                 let randIndex = getRandomInt(0, rhymes.length);
-                cb(rhymes[randIndex].word);
-            } else {
-                // TODO: failed to get rhyme for given word (over SIMILAR_SCORE_CONSTANT)
-                console.log("Failed?");
+                cb(false, rhymes[randIndex].word);
+            } else { // We failed to find a rhyme with/out same syllables and >= SIMILAR_SCORE_CONSTANT
+                cb("Unable to find appropriate rhyme for " + word);
             }
         }).catch(error => {
-            console.log(error.response.body);
-            console.log("ERROR occured with rhyme request");
             // TODO make server report error in api request, like api is down so we can't work right now
-            //=> 'Internal server error ...'
+            // TODO: log(error.response.body);
+            console.log("ERROR occured with rhyme request");
+            cb("API GET request error");
         });
     }
 
@@ -82,21 +85,15 @@ class Poem {
                 return word.score >= SIMILAR_SCORE_CONSTANT;
             }
         });
-        console.log("\nFiltered", rhymes);
-        // TODO: Handle if no words fit criteria, or if a couple meet and they are duplicates
-        // Don't want to pick the same word we have already gotten
-        console.log("Removing", this.wordsDone);
+        // Don't want to pick any duplicate replacement words
         _.forEach(this.wordsDone, (removeWord) => {
             rhymes = _.filter(rhymes, (rhymeWord) => removeWord != rhymeWord.word);
         });
-        console.log("\nRemoved", rhymes);
-        // Logic for no rhymes, try without same syllable, then fail
+        // Logic for no rhymes is try again without same syllable, then fail
         if (rhymes.length == 0) {
             if (syllable) {
-                console.log("Redoing with no syl");
-                filterRhymes(rawRhymes, wordSyl, false);
+                return this.filterRhymes(rawRhymes, wordSyl, false);
             } else {
-                console.log("failed to filter rhymes");
                 return false;
             }
         }
