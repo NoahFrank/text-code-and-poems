@@ -52,11 +52,12 @@ class Poem {
         datamuse.words({
             rel_rhy: word
         }).then((json) => {
-            let sameSylRhymes = this.filterRhymes(json, wordSyl);
+            let rhymes = this.filterRhymes(json, wordSyl);
             // Determine if we actually found a rhyme
-            if (sameSylRhymes) {
-                let randWordIndex = getRandomInt(0, sameSylRhymes.length);
-                cb(sameSylRhymes[randWordIndex].word);
+            console.log("Rhymes for", word, " are", rhymes);
+            if (rhymes) {
+                let randIndex = getRandomInt(0, rhymes.length);
+                cb(rhymes[randIndex].word);
             } else {
                 // TODO: failed to get rhyme for given word (over SIMILAR_SCORE_CONSTANT)
             }
@@ -68,8 +69,8 @@ class Poem {
         });
     }
 
-    filterRhymes(rhymes, wordSyl, syllable=true) {
-        let sameSylRhymes = _.filter(rhymes, (word) => {
+    filterRhymes(rawRhymes, wordSyl, syllable=true) {
+        let rhymes = _.filter(rawRhymes, (word) => {
             if (syllable) {
                 return word.numSyllables == wordSyl &&
                     word.score >= SIMILAR_SCORE_CONSTANT;
@@ -80,18 +81,18 @@ class Poem {
         // TODO: Handle if no words fit criteria, or if a couple meet and they are duplicates
         // Don't want to pick the same word we have already gotten
         _.forEach(this.wordsDone, (removeWord) => {
-            sameSylRhymes = _.remove(sameSylRhymes, (rhymeWord) => removeWord === rhymeWord);
+            rhymes = _.remove(rhymes, (rhymeWord) => removeWord === rhymeWord);
         });
         // Logic for no rhymes, try without same syllable, then fail
-        if (sameSylRhymes.length == 0) {
+        if (rhymes.length == 0) {
             if (syllable) {
-                filterRhymes(rhymes, wordSyl, false);
+                filterRhymes(rawRhymes, wordSyl, false);
             } else {
                 return false;
             }
         }
 
-        return sameSylRhymes;
+        return rhymes;
     }
 }
 
