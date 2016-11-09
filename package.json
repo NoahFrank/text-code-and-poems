@@ -1,0 +1,24 @@
+{
+  "name": "text-code-and-poems",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "body-parser": "~1.15.2",
+    "cookie-parser": "~1.4.3",
+    "datamuse": "^1.0.5",
+    "debug": "~2.2.0",
+    "express": "~4.14.0",
+    "jade": "~1.11.0",
+    "lodash": "^4.16.6",
+    "morgan": "~1.7.0",
+    "serve-favicon": "~2.3.0",
+    "syllable": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-es2015": "^6.18.0"
+  }
+}
