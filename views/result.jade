@@ -2,6 +2,7 @@ extends layout
 
 block content
 	h1= title
-	p= original
-	br
-	p= result
+	h3: b Original Poem
+	p!= original
+	h3: b Modified Poem
+	p!= result

@@ -24,7 +24,9 @@ router.post('/rhyme', function (req, res, next) {
     let originalText = req.body.originalText;
     new Poem(originalText, (error, result) => {
         console.log(result);
-        res.render('result', {title: 'Rhyme Result', original: originalText, result: result});
+        let resultFormat = result.replace(/\n/g, '<br>');
+        let originalTextFormat = originalText.replace(/\n/g, '<br>');
+        res.render('result', {title: 'Rhyme Result', original: originalTextFormat, result: resultFormat});
     });
 });
 
