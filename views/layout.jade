@@ -1,7 +1,30 @@
 doctype html
-html
-  head
-    title= title
-    link(rel='stylesheet', href='/stylesheets/style.css')
-  body
-    block content
+html(lang='en')
+	head
+		meta(charset='utf-8')
+		meta(http-equiv='X-UA-Compatible', content='IE=edge')
+		meta(name='viewport', content='width=device-width, initial-scale=1')
+		meta(name='author', content='Noah Frank')
+		title= title
+		// Bootstrap Core CSS
+		link(href='css/bootstrap.min.css', rel='stylesheet')
+		// Custom CSS
+		link(href='css/stylish-portfolio.css', rel='stylesheet')
+		// Any additional css for individual pages
+		block css
+		// Custom Fonts
+		link(href='font-awesome/css/font-awesome.min.css', rel='stylesheet', type='text/css')
+		link(href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic', rel='stylesheet', type='text/css')
+		// Any additional fonts for individual pages
+		block font
+	body
+		// Header
+		header#top.header
+			.text-vertical-center
+				block content
+		// jQuery
+		script(src='js/jquery.js')
+		// Bootstrap Core JavaScript
+		script(src='js/bootstrap.min.js')
+		// Any additional js for individual pages
+		block javascript

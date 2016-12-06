@@ -10,18 +10,22 @@ const SIMILAR_SCORE_CONSTANT = 500;
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    let test = new Poem(`They put me in the oven to bake.
-Me a deprived and miserable cake.
-Feeling the heat I started to bubble.
-Watching the others I knew I was in orange...`,
-        (error, result) => {
-            if (error) {
-                console.log("ERROR:", error);
-            } else {
-                console.log(result);
-            }
+//     let test = new Poem(`They put me in the oven to bake.
+// Me a deprived and miserable cake.
+// Feeling the heat I started to bubble.
+// Watching the others I knew I was in orange...`,
+//         (error, result) => {
+//             console.log(result);
+//     });
+    res.render('index', { title: 'Rhyme Time' });
+});
+
+router.post('/rhyme', function (req, res, next) {
+    let originalText = req.body.originalText;
+    new Poem(originalText, (error, result) => {
+        console.log(result);
+        res.render('result', {title: 'Rhyme Result', original: originalText, result: result});
     });
-    res.render('index', { title: 'Express' });
 });
 
 class Poem {
@@ -36,22 +40,26 @@ class Poem {
         let lines = _.split(text.trim(), '\n');
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
-            let words = _.split(line, ' ');
-            let lastWord = words[words.length - 1].replace(/[^\w]/g,''); // Want to rhyme last word
-            this.getRhymeFor(lastWord, (error, word) => {
-                if (error) { // An error occurred when getting a rhyme
-                    cb(error);
-                } else {
+            // if (/\S/.test(line)) { // Make sure line isn't empty or whitespace, and preserve the styling by not modifying
+                let words = _.split(line, ' ');
+                let lastWord = words[words.length - 1].replace(/[^\w]/g,''); // Want to rhyme last word
+                this.getRhymeFor(lastWord, (error, word) => {
+                    if (error) { // An error occurred when getting a rhyme, so don't change word
+                        word = lastWord;
+                        console.log("ERROR:", error);
+                    } else {
+                        console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
+                    }
+
                     // Now rejoin line and replace for final text
-                    console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
                     words[words.length - 1] = word;
                     lines[i] = _.join(words, ' ');
                     this.wordsDone.push(word); // Add word to done so we can parallel done and no duplicates
                     if (this.wordsDone.length == lines.length) {
                         cb(false, _.join(lines, '\n'));
                     }
-                }
-            });
+                });
+            // }
         }
     }
 
