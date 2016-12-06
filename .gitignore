@@ -29,8 +29,8 @@ node_modules
 # Debug log from npm
 npm-debug.log
 
-# Jetbrains project folde
+# Jetbrains project folder
 .idea/
 
 # compiled folder
-out/
+dist/
