@@ -16,6 +16,7 @@
     "jade": "~1.11.0",
     "lodash": "^4.16.6",
     "morgan": "~1.7.0",
+    "node-cache": "^4.1.0",
     "serve-favicon": "~2.3.0",
     "syllable": "^1.0.0"
   },
