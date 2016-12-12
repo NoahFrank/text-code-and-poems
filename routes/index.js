@@ -4,10 +4,29 @@ const router = express.Router();
 const datamuse = require('datamuse');
 const syllable = require('syllable');
 const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
 
 // Start up rhyming cache
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
+
+// Load and initialize cache if applicable
+const CACHE_PATH = path.join(__dirname, 'cache');
+if (fs.existsSync(CACHE_PATH)) {
+    fs.readFile(CACHE_PATH, (err, data) => {
+        if (err) return console.log("Failed to load saved cache: ", err);
+        let cacheData = JSON.parse(data);
+        for (let i = 0; i < cacheData.length; i++) {
+            myCache.set(cacheData[i].key, cacheData[i].value, (err, success) => {
+                if (err) console.log("Error loading to cache:", err);
+            });
+        }
+        console.log("Successfully loaded", myCache.keys().length, "cached items");
+    });
+} else {
+    console.log("Could not find cache file, one will be populated on exit");
+}
 
 const SIMILAR_SCORE_CONSTANT = 500;
 const debug = false;
@@ -42,7 +61,9 @@ class Poem {
             lines[i] = line; // Then save stripped line in final version
             if (/\S/.test(line)) { // Make sure line isn't empty or whitespace, and preserve the styling by not modifying
                 let words = _.split(line, ' ');
-                let lastWord = words[words.length - 1].replace(/[^\w]/g,''); // Want to rhyme last word
+                // This replace could fail in rare instances where poem has \w\w.\w\w\w\w
+                let lastWordTemp = words[words.length - 1].match(/[\w]+/);
+                let lastWord = lastWordTemp.length > 0 ? lastWordTemp[0] : cb("Cannot detect last word:", words[words.length - 1]); // Want to rhyme last word
 
                 this.getRhymeFor(lastWord, (error, word) => {
                     if (error) { // An error occurred when getting a rhyme, so don't change word
@@ -54,8 +75,9 @@ class Poem {
                             console.log("Found rhyme for", lastWord, ":", word, "at index:", i);
                     }
 
-                    // Now rejoin line and replace for final text
-                    words[words.length - 1] = word;
+                    // Replace last word with replacement word found
+                    words[words.length - 1] = words[words.length - 1].replace(/[\w]+/, word);
+                    // Recreate the line for final version
                     lines[i] = _.join(words, ' ');
 
                     this.wordsDone.push(word); // Add word to done so we can parallel done and no duplicates
@@ -120,9 +142,11 @@ class Poem {
         let rhymes = _.filter(rawRhymes, (word) => {
             if (syllable) {
                 return word.numSyllables == wordSyl &&
-                    word.score >= SIMILAR_SCORE_CONSTANT;
+                       word.score >= SIMILAR_SCORE_CONSTANT &&
+                       word.word.length > 1;
             } else {
-                return word.score >= SIMILAR_SCORE_CONSTANT;
+                return word.score >= SIMILAR_SCORE_CONSTANT &&
+                       word.word.length > 1;
             }
         });
         // Don't want to pick any duplicate replacement words
@@ -148,4 +172,10 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-module.exports = router;
+// Save constant path expected to read/write cache to
+myCache.CACHE_PATH = CACHE_PATH;
+
+module.exports = {
+    router: router,
+    cache: myCache
+};

@@ -4,8 +4,10 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var fs = require('fs');
 
-var index = require('./dist/index');
+var index = require('./dist/index').router;
+var cache = require('./dist/index').cache;
 
 var app = express();
 
@@ -40,5 +42,29 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
+
+process.on('SIGINT', function () {
+    saveCacheToDisk();
+});
+
+process.on('SIGTERM', function () {
+    saveCacheToDisk();
+});
+
+function saveCacheToDisk() {
+    var saveCache = [];
+    for (var i = 0; i < cache.keys().length; i++) {
+        var key = cache.keys()[i];
+        saveCache[i] = {key: key, value: cache.get(key)};
+    }
+    fs.writeFile(cache.CACHE_PATH, JSON.stringify(saveCache), function(err) {
+        if (err) {
+            console.log("Failed to write cache to file");
+            process.exit(1);
+        }
+        console.log("Successfully saved ", saveCache.length, "cached items to", cache.CACHE_PATH);
+        process.exit(0);
+    });
+}
 
 module.exports = app;
