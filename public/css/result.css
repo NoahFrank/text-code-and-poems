@@ -5,3 +5,13 @@ p {
     background-color: black;
     color: white;
 }
+
+.restart {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 20px;
+    margin-top: 20px;
+    width: 150px;
+    font-size: 20px;
+}
