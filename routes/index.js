@@ -61,8 +61,23 @@ class Poem {
             lines[i] = line; // Then save stripped line in final version
             if (/\S/.test(line)) { // Make sure line isn't empty or whitespace, and preserve the styling by not modifying
                 let words = _.split(line, ' ');
-                // This replace could fail in rare instances where poem has \w\w.\w\w\w\w
-                let lastWordTemp = words[words.length - 1].match(/[\w]+/);
+                // Loop from back to front trying to find word (find word nearest to the end of line)
+                let lastWordTemp = null;
+                let lastWordIndex = words.length-1;  // Thank you ES6 binding gods
+                for (; lastWordIndex >= 0; lastWordIndex--) {
+                    // This replace could fail in rare instances where poem has \w\w.\w\w\w\w
+                    lastWordTemp = words[lastWordIndex].match(/[\w]+/);
+                    if (!_.isNull(lastWordTemp)) {
+                        break;
+                    }
+                }
+                if (_.isNull(lastWordTemp)) { // Make sure something was found, else this line has no valid target for rhyming and we skip
+                    if (debug)
+                        console.log("Skipping line because no word:", i);
+                    this.wordsDone.push(line);
+                    continue;
+                }
+
                 let lastWord = lastWordTemp.length > 0 ? lastWordTemp[0] : cb("Cannot detect last word:", words[words.length - 1]); // Want to rhyme last word
 
                 this.getRhymeFor(lastWord, (error, word) => {
@@ -76,7 +91,7 @@ class Poem {
                     }
 
                     // Replace last word with replacement word found
-                    words[words.length - 1] = words[words.length - 1].replace(/[\w]+/, word);
+                    words[lastWordIndex] = words[lastWordIndex].replace(/[\w]+/, word);
                     // Recreate the line for final version
                     lines[i] = _.join(words, ' ');
 
@@ -87,7 +102,7 @@ class Poem {
                 });
             } else {
                 if (debug)
-                    console.log("Skipping line:", i);
+                    console.log("Skipping line because empty:", i);
                 this.wordsDone.push(line);
             }
         }
