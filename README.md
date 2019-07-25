@@ -1,5 +1,5 @@
 # Rhyme Time
-### Visit our website at http://ucbox.student.rit.edu:3001/
+### Visit our website at (server host down)
 
 A fun rhyming website where you input a rhyming poem (or any text) and get a new similar poem!
 
